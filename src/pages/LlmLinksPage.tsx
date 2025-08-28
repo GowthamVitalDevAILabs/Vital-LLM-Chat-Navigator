@@ -7,20 +7,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Search, Plus, Link, RefreshCw } from 'lucide-react';
 import { LlmLinkCard } from '@/components/LlmLinkCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { NewLinkForm } from '@/components/NewLinkForm';
 import { useLlmLinks } from '@/hooks/useLlmLinks';
 import { useToast } from "@/hooks/use-toast";
+import { APP_CONFIG, CATEGORIES, NOTION_URLS, API_URLS } from '@/config/types';
 
 export default function LlmLinksPage() {
   const { data: links, isLoading, error, refetch } = useLlmLinks();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('popular');
+  const [showPopularOnly, setShowPopularOnly] = useState<boolean>(true);
+  const [showNewLinkForm, setShowNewLinkForm] = useState<boolean>(false);
 
   const handleRefresh = async () => {
     toast({ title: "Syncing with Notion...", description: "Fetching the latest links." });
     
     try {
-      const response = await fetch('http://localhost:3002/api/fetch-and-cache?type=llm_links');
+      const response = await fetch(`${API_URLS.base}${API_URLS.endpoints.fetchAndCache}?type=llm_links`);
       const result = await response.json();
       
       if (!response.ok) throw new Error(result.error);
@@ -43,9 +47,12 @@ export default function LlmLinksPage() {
     if (!links) return [];
     const cats = new Set<string>();
     links.forEach(link => {
-      console.log(link.category);
-      if (link.category && link.category.length > 0) {
-        cats.add(link.category);
+      if (Array.isArray(link.category)) {
+        link.category.forEach(cat => {
+          if (cat && typeof cat === 'string') {
+            cats.add(cat);
+          }
+        });
       }
     });
     return Array.from(cats).sort();
@@ -61,10 +68,12 @@ export default function LlmLinksPage() {
         link.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         link.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      const matchesCategory = selectedCategory === 'all' || 
-        link.category === selectedCategory;
+      const matchesCategory = selectedCategory === 'all' || selectedCategory === 'popular' || 
+        (Array.isArray(link.category) && link.category.includes(selectedCategory));
       
-      return matchesSearch && matchesCategory;
+      const matchesPopular = !showPopularOnly || link.isPopular;
+      
+      return matchesSearch && matchesCategory && matchesPopular;
     });
   }, [links, searchTerm, selectedCategory]);
 
@@ -126,22 +135,31 @@ export default function LlmLinksPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-foreground">LLM Chat Links</h2>
-            <Button size="sm">
+            <h2 className="text-2xl font-bold text-foreground">{APP_CONFIG.name}</h2>
+            <Button size="sm" onClick={() => setShowNewLinkForm(true)}>
               <Plus className="mr-2 h-4 w-4" />
               New link
             </Button>
-            <Button onClick={handleRefresh} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Sync with Notion
-            </Button>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => window.open(NOTION_URLS.databases.llmLinks.view, '_blank')}
+              variant="outline"
+              size="sm"
+              className="mr-2"
+            >
+              Edit in Database
+            </Button>
+            <Button onClick={handleRefresh} variant="ghost" size="icon" className="h-8 w-8">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
 
         {/* Main Title and Subtitle */}
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-foreground">LLM Chat Links</h1>
+          <h1 className="text-4xl font-bold text-foreground">{APP_CONFIG.name}</h1>
           <p className="text-lg text-muted-foreground">Access your favorite AI models and platforms.</p>
         </div>
 
@@ -159,9 +177,23 @@ export default function LlmLinksPage() {
         {/* Category Filter Buttons */}
         <div className="flex flex-wrap gap-2 justify-center">
           <Button
+            variant={selectedCategory === 'popular' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              setSelectedCategory('popular');
+              setShowPopularOnly(true);
+            }}
+            className="rounded-full"
+          >
+            Popular
+          </Button>
+          <Button
             variant={selectedCategory === 'all' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setSelectedCategory('all')}
+            onClick={() => {
+              setSelectedCategory('all');
+              setShowPopularOnly(false);
+            }}
             className="rounded-full"
           >
             All Categories
@@ -178,6 +210,23 @@ export default function LlmLinksPage() {
             </Button>
           ))}
         </div>
+
+        {/* New Link Form */}
+        {showNewLinkForm && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="relative w-full max-w-2xl">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 -mt-12"
+                onClick={() => setShowNewLinkForm(false)}
+              >
+                ✕
+              </Button>
+              <NewLinkForm />
+            </div>
+          </div>
+        )}
 
         {/* Links Grid */}
         {filteredLinks.length === 0 ? (
