@@ -1,123 +1,117 @@
 # LLM Chat Links
 
-A modern, responsive web application for managing and accessing AI chat interfaces and LLM platforms. Built with React, TypeScript, and shadcn/ui.
+A modern web application for managing and discovering AI model links and resources. Built with React, TypeScript, and Supabase.
 
 ## Features
 
-- **Curated LLM Links**: Browse and access various AI chat interfaces
-- **Search & Filter**: Find links by name, model, tags, or description
-- **Category Filtering**: Filter links by categories
-- **Dark/Light Theme**: Toggle between themes
-- **Responsive Design**: Works on desktop and mobile devices
-- **Notion Integration**: Sync data from Notion databases
-- **Modern UI**: Built with shadcn/ui components
+- 🔍 Search and filter LLM resources
+- 🏷️ Category-based organization
+- ⭐ Popular links highlighting
+- 🌓 Dark/Light theme support
+- ✨ Modern, responsive UI
+- 🔄 Real-time updates with Supabase
+- ➕ Add new links through a user-friendly form
 
 ## Tech Stack
 
-- **Frontend**: React 18, TypeScript, Vite
-- **UI Components**: shadcn/ui, Radix UI
-- **Styling**: Tailwind CSS
+- **Frontend**: React + TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui
 - **State Management**: TanStack Query
-- **Backend**: Express.js, Node.js
-- **Database**: Notion API
-- **Routing**: React Router DOM
+- **Backend**: Supabase
+- **Build Tool**: Vite
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
-- Notion API key and database ID
+- Node.js (v16 or higher)
+- npm
+- Supabase account and project
 
-### Installation
+### Setup
 
 1. Clone the repository:
-```bash
-git clone <repository-url>
-cd llm-chat-links
-```
+   ```bash
+   git clone [your-repo-url]
+   cd llm-chat-links
+   ```
 
 2. Install dependencies:
-```bash
-npm install
-```
+   ```bash
+   npm install
+   ```
 
-3. Set up environment variables:
-Create a `.env` file in the root directory:
-```env
-NOTION_API_KEY=your_notion_api_key
-NOTION_LINKS_DATABASE_ID=your_notion_database_id
-```
+3. Create a `.env.local` file in the project root:
+   ```
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
 
-4. Install server dependencies:
-```bash
-cd server
-npm install
-cd ..
-```
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-### Development
+## Database Schema
 
-1. Start the development server:
-```bash
-npm run dev
-```
+The Supabase database includes a `llm_links` table with the following structure:
 
-2. Start the backend server (in a separate terminal):
-```bash
-cd server
-npm run dev
-```
-
-The application will be available at `http://localhost:8081`
-
-### Building for Production
-
-```bash
-npm run build
+```sql
+CREATE TABLE llm_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  name TEXT NOT NULL,
+  description TEXT,
+  url TEXT NOT NULL,
+  model TEXT,
+  category TEXT[],
+  "isPopular" BOOLEAN NOT NULL DEFAULT false,
+  tags TEXT[]
+);
 ```
 
 ## Project Structure
 
 ```
-llm-chat-links/
-├── src/
-│   ├── components/
-│   │   ├── ui/          # shadcn/ui components
-│   │   ├── LlmLinkCard.tsx
-│   │   └── ThemeToggle.tsx
-│   ├── hooks/
-│   │   ├── useLlmLinks.ts
-│   │   ├── use-mobile.tsx
-│   │   └── use-toast.ts
-│   ├── pages/
-│   │   ├── LlmLinksPage.tsx
-│   │   └── NotFound.tsx
-│   ├── lib/
-│   │   └── utils.ts
-│   ├── App.tsx
-│   └── main.tsx
-├── server/
-│   ├── index.js
-│   └── package.json
-├── public/
-│   └── data/
-│       └── llmLinks.json
-└── package.json
+src/
+├── components/         # React components
+│   ├── ui/            # shadcn/ui components
+│   ├── LlmLinkCard    # Link display component
+│   ├── NewLinkForm    # Form for adding new links
+│   └── ThemeToggle    # Theme switcher
+├── config/            # Constants and types
+├── hooks/             # Custom React hooks
+├── lib/              # Utilities and configurations
+├── pages/            # Page components
+└── types/            # TypeScript type definitions
 ```
 
-## API Endpoints
+## Features & Roadmap
 
-- `GET /api/fetch-and-cache?type=llm_links` - Fetch and cache LLM links from Notion
+### Current Features
+- Search functionality across name, model, description, and tags
+- Category-based filtering
+- Popular links section
+- Dark/Light theme toggle
+- Add new links through form
+- Real-time updates
+
+### Planned Features
+- User authentication
+- Favorite links
+- Share links
+- Advanced filtering
+- Analytics dashboard
+- User collections
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.

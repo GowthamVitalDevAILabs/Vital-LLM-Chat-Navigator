@@ -3,18 +3,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useCreateLlmLink } from '@/hooks/useLlmLinks';
+import { useToast } from '@/hooks/use-toast';
+import type { LlmLinkInsert } from '@/hooks/useLlmLinks';
 
-interface NewLinkFormData {
-  category: string[];
-  description: string;
-  isPopular: boolean;
-  model: string;
-  tags: string[];
-  url: string;
+interface NewLinkFormProps {
+  onClose: () => void;
 }
 
-export function NewLinkForm() {
-  const [formData, setFormData] = useState<NewLinkFormData>({
+export function NewLinkForm({ onClose }: NewLinkFormProps) {
+  const { toast } = useToast();
+  const createLlmLink = useCreateLlmLink();
+  const [formData, setFormData] = useState<LlmLinkInsert>({
+    name: '',
     category: [],
     description: '',
     isPopular: false,
@@ -23,9 +24,22 @@ export function NewLinkForm() {
     url: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form Data:', formData);
+    try {
+      await createLlmLink.mutateAsync(formData);
+      toast({
+        title: 'Success',
+        description: 'Link created successfully',
+      });
+      onClose();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create link',
+      });
+    }
   };
 
   const handleTagsChange = (value: string) => {

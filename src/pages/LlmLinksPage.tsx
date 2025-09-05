@@ -20,26 +20,12 @@ export default function LlmLinksPage() {
   const [showPopularOnly, setShowPopularOnly] = useState<boolean>(true);
   const [showNewLinkForm, setShowNewLinkForm] = useState<boolean>(false);
 
-  const handleRefresh = async () => {
-    toast({ title: "Syncing with Notion...", description: "Fetching the latest links." });
-    
-    try {
-      const response = await fetch(`${API_URLS.base}${API_URLS.endpoints.fetchAndCache}?type=llm_links`);
-      const result = await response.json();
-      
-      if (!response.ok) throw new Error(result.error);
-      
-      await refetch();
-      
-      toast({ title: "Sync Complete!", description: result.message });
-    } catch (err) {
-      const isOffline = !navigator.onLine || err.message.includes('fetch');
-      toast({
-        variant: "destructive",
-        title: "Sync Failed",
-        description: isOffline ? "Please check your internet connection and try again." : err.message,
-      });
-    }
+  const handleRefresh = () => {
+    refetch();
+    toast({ 
+      title: "Refreshing...", 
+      description: "Fetching the latest links." 
+    });
   };
 
   // Extract unique categories from the data
@@ -142,14 +128,6 @@ export default function LlmLinksPage() {
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => window.open(NOTION_URLS.databases.llmLinks.view, '_blank')}
-              variant="outline"
-              size="sm"
-              className="mr-2"
-            >
-              Edit in Database
-            </Button>
             <Button onClick={handleRefresh} variant="ghost" size="icon" className="h-8 w-8">
               <RefreshCw className="h-4 w-4" />
             </Button>
@@ -223,7 +201,7 @@ export default function LlmLinksPage() {
               >
                 ✕
               </Button>
-              <NewLinkForm />
+              <NewLinkForm onClose={() => setShowNewLinkForm(false)} />
             </div>
           </div>
         )}
