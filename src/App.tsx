@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import LlmLinksPage from "./pages/LlmLinksPage";
+import LlmLinksTablePage from "./pages/LlmLinksTablePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,6 +19,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LlmLinksPage />} />
+            <Route path="/table" element={<LlmLinksTablePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
