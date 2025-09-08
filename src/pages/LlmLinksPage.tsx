@@ -4,12 +4,13 @@ import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Plus, Link, RefreshCw } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Search, Plus, Link, RefreshCw, Table } from 'lucide-react';
 import { LlmLinkCard } from '@/components/LlmLinkCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NewLinkForm } from '@/components/NewLinkForm';
 import { useLlmLinks } from '@/hooks/useLlmLinks';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 import { APP_CONFIG, CATEGORIES, NOTION_URLS, API_URLS } from '@/config/types';
 
 export default function LlmLinksPage() {
@@ -122,10 +123,23 @@ export default function LlmLinksPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold text-foreground">{APP_CONFIG.name}</h2>
-            <Button size="sm" onClick={() => setShowNewLinkForm(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New link
-            </Button>
+            <div className="flex items-center gap-2">
+              <Dialog open={showNewLinkForm} onOpenChange={setShowNewLinkForm}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    New link
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <NewLinkForm onClose={() => setShowNewLinkForm(false)} />
+                </DialogContent>
+              </Dialog>
+              <Button size="sm" variant="outline" onClick={() => window.location.href = '/table'}>
+                <Table className="mr-2 h-4 w-4" />
+                View / Edit
+              </Button>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={handleRefresh} variant="ghost" size="icon" className="h-8 w-8">
@@ -189,22 +203,6 @@ export default function LlmLinksPage() {
           ))}
         </div>
 
-        {/* New Link Form */}
-        {showNewLinkForm && (
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="relative w-full max-w-2xl">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 -mt-12"
-                onClick={() => setShowNewLinkForm(false)}
-              >
-                ✕
-              </Button>
-              <NewLinkForm onClose={() => setShowNewLinkForm(false)} />
-            </div>
-          </div>
-        )}
 
         {/* Links Grid */}
         {filteredLinks.length === 0 ? (
