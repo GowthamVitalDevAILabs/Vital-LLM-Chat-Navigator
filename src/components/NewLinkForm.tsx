@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateLlmLink } from '@/hooks/useLlmLinks';
 import { useToast } from '@/hooks/use-toast';
 import type { LlmLinkInsert } from '@/hooks/useLlmLinks';
+import modelsData from '@/data/models.json';
 
 interface NewLinkFormProps {
   onClose: () => void;
@@ -42,14 +44,16 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
     }
   };
 
-  const handleTagsChange = (value: string) => {
+  const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
     setFormData(prev => ({
       ...prev,
       tags: value.split(',').map(tag => tag.trim()).filter(Boolean)
     }));
   };
 
-  const handleCategoryChange = (value: string) => {
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
     setFormData(prev => ({
       ...prev,
       category: value.split(',').map(cat => cat.trim()).filter(Boolean)
@@ -57,15 +61,15 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Add New Link</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="w-full">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold leading-none tracking-tight">Add New Link</h2>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">URL</label>
+            <label className="text-sm font-medium">URL <span className="text-red-500">*</span></label>
             <Input
+              required
               value={formData.url}
               onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
               placeholder="Enter URL"
@@ -73,12 +77,22 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Model</label>
-            <Input
-              value={formData.model}
-              onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-              placeholder="Enter model name"
-            />
+            <label className="text-sm font-medium">Model <span className="text-red-500">*</span></label>
+            <Select 
+              value={formData.model} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, model: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a model" />
+              </SelectTrigger>
+              <SelectContent>
+                {modelsData.map((model) => (
+                  <SelectItem key={model} value={model}>
+                    {model}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
@@ -91,20 +105,22 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Categories (comma-separated)</label>
+            <label className="text-sm font-medium">Categories (comma-separated) <span className="text-red-500">*</span></label>
             <Input
+              required
               value={formData.category.join(', ')}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              placeholder="Enter categories"
+              onChange={handleCategoryChange}
+              placeholder="category1, category2, category3"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Tags (comma-separated)</label>
+            <label className="text-sm font-medium">Tags (comma-separated) <span className="text-red-500">*</span></label>
             <Input
+              required
               value={formData.tags.join(', ')}
-              onChange={(e) => handleTagsChange(e.target.value)}
-              placeholder="Enter tags"
+              onChange={handleTagsChange}
+              placeholder="tag1, tag2, tag3"
             />
           </div>
 
@@ -121,11 +137,10 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
             </label>
           </div>
 
-          <Button type="submit" className="w-full">
-            Submit
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+        <Button type="submit" className="w-full">
+          Submit
+        </Button>
+      </form>
+    </div>
   );
 }
