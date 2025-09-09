@@ -77,6 +77,16 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
           </div>
 
           <div className="space-y-2">
+            <label className="text-sm font-medium">Name <span className="text-red-500">*</span></label>
+            <Input
+              required
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter name"
+            />
+          </div>
+
+          <div className="space-y-2">
             <label className="text-sm font-medium">Model <span className="text-red-500">*</span></label>
             <Select 
               value={formData.model} 
