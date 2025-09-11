@@ -5,6 +5,8 @@ A modern, full-featured web application for managing and discovering AI model li
 ## ✨ Features
 
 ### 🎯 Core Functionality
+- 🔐 **User Authentication** - Secure sign-up/sign-in with email and Google OAuth
+- 👤 **Personal Data Management** - Each user has their own private collection of links
 - 🔍 **Advanced Search & Filtering** - Search across name, model, description, and tags with real-time results
 - 🏷️ **Category-based Organization** - Dynamic category filtering and organization
 - ⭐ **Popular Links Highlighting** - Mark and filter popular AI resources
@@ -12,6 +14,8 @@ A modern, full-featured web application for managing and discovering AI model li
 - ➕ **CRUD Operations** - Create, read, update, and delete links with full data management
 
 ### 🎨 User Experience
+- 🔐 **Secure Authentication Flow** - Beautiful login/signup forms with modern design
+- 👤 **User Profile Management** - Avatar display and account management
 - 🌓 **Dark/Light Theme Support** - System-aware theme switching with manual toggle
 - ✨ **Modern, Responsive UI** - Built with shadcn/ui and Tailwind CSS
 - 📱 **Mobile-First Design** - Fully responsive across all device sizes
@@ -73,9 +77,16 @@ A modern, full-featured web application for managing and discovering AI model li
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
-4. **Database Setup:**
-   Run this SQL in your Supabase SQL Editor:
+4. **Authentication Setup:**
+   - In your Supabase dashboard, go to Authentication > Providers
+   - Enable Email authentication (should be enabled by default)
+   - Optional: Enable Google OAuth for social login
+     - Add your Google OAuth credentials in the Google provider settings
+
+5. **Database Setup:**
+   For new installations, run the complete setup SQL in your Supabase SQL Editor:
    ```sql
+   -- Create the main table with user authentication support
    CREATE TABLE llm_links (
      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -85,11 +96,37 @@ A modern, full-featured web application for managing and discovering AI model li
      model TEXT,
      category TEXT[],
      "isPopular" BOOLEAN NOT NULL DEFAULT false,
-     tags TEXT[]
+     tags TEXT[],
+     user_id UUID REFERENCES auth.users(id) DEFAULT auth.uid()
    );
+
+   -- Enable Row Level Security
+   ALTER TABLE llm_links ENABLE ROW LEVEL SECURITY;
+
+   -- Create security policies
+   CREATE POLICY "Users can view own llm_links" ON llm_links
+       FOR SELECT USING (auth.uid() = user_id);
+
+   CREATE POLICY "Users can insert own llm_links" ON llm_links
+       FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+   CREATE POLICY "Users can update own llm_links" ON llm_links
+       FOR UPDATE USING (auth.uid() = user_id);
+
+   CREATE POLICY "Users can delete own llm_links" ON llm_links
+       FOR DELETE USING (auth.uid() = user_id);
+
+   -- Create index for better performance
+   CREATE INDEX idx_llm_links_user_id ON llm_links(user_id);
    ```
 
-5. **Start Development Server:**
+   **For existing installations:** If you already have data, use the migration file:
+   ```bash
+   # Run the SQL commands in database-migration.sql
+   # This will safely add authentication without losing existing data
+   ```
+
+6. **Start Development Server:**
    ```bash
    npm run dev
    ```
@@ -100,6 +137,10 @@ A modern, full-featured web application for managing and discovering AI model li
 llm-chat-links/
 ├── src/
 │   ├── components/          # React components
+│   │   ├── auth/           # Authentication components
+│   │   │   ├── AuthPage.tsx    # Main authentication page
+│   │   │   ├── SignInForm.tsx  # Sign-in form component
+│   │   │   └── SignUpForm.tsx  # Sign-up form component
 │   │   ├── ui/             # shadcn/ui component library
 │   │   │   ├── button.tsx  # Button variants (default, hero, premium)
 │   │   │   ├── card.tsx    # Card variants (default, glass, premium)
@@ -109,11 +150,14 @@ llm-chat-links/
 │   │   │   └── ...         # Other UI primitives
 │   │   ├── LlmLinkCard.tsx # Link display card component
 │   │   ├── NewLinkForm.tsx # Form for adding new links
-│   │   └── ThemeToggle.tsx # Dark/light theme switcher
+│   │   ├── ThemeToggle.tsx # Dark/light theme switcher
+│   │   └── UserProfile.tsx # User profile dropdown menu
 │   ├── config/             # Configuration and constants
 │   │   ├── constants.ts    # App-wide constants
 │   │   ├── types.ts        # Type definitions and configs
 │   │   └── urls.ts         # URL configurations
+│   ├── contexts/           # React contexts
+│   │   └── AuthContext.tsx # Authentication context and provider
 │   ├── hooks/              # Custom React hooks
 │   │   ├── useLlmLinks.ts  # Main data fetching and CRUD hooks
 │   │   ├── use-toast.ts    # Toast notification hook
@@ -156,7 +200,7 @@ llm-chat-links/
 
 ## 🔧 Database Schema
 
-The application uses a single `llm_links` table with the following structure:
+The application uses a single `llm_links` table with user-based data segregation:
 
 | Column      | Type          | Description                    |
 |-------------|---------------|--------------------------------|
@@ -169,6 +213,12 @@ The application uses a single `llm_links` table with the following structure:
 | category    | TEXT[]        | Array of category tags         |
 | isPopular   | BOOLEAN       | Popular resource flag          |
 | tags        | TEXT[]        | Array of searchable tags       |
+| user_id     | UUID          | Foreign key to auth.users      |
+
+### Security Features
+- **Row Level Security (RLS)**: Automatically filters data by authenticated user
+- **Authentication Integration**: Built on Supabase Auth with email and OAuth
+- **Data Isolation**: Each user can only access their own links
 
 ## 🎨 UI Components & Design System
 
@@ -219,10 +269,12 @@ Built on **shadcn/ui** with custom extensions:
 - ✅ Responsive design and theme support
 - ✅ Inline table editing
 - ✅ Toast notification system
+- ✅ User authentication and authorization
+- ✅ User profiles and personal collections
+- ✅ Row Level Security (RLS) for data isolation
+- ✅ Modern authentication UI with Google OAuth
 
 ### Upcoming Features 🚧
-- 🔐 User authentication and authorization
-- 👤 User profiles and personal collections
 - ⭐ Favorite links and bookmarking
 - 🔗 Link sharing and collaboration
 - 📊 Usage analytics and insights
@@ -231,6 +283,8 @@ Built on **shadcn/ui** with custom extensions:
 - 🔍 Full-text search with Supabase
 - 📈 Link popularity tracking
 - 🎯 Personalized recommendations
+- 🔄 Real-time collaboration features
+- 📧 Email notifications and reminders
 
 ## 🤝 Contributing
 

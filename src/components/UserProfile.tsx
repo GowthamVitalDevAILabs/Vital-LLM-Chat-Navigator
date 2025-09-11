@@ -1,0 +1,77 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
+import { User, LogOut, Settings, Mail } from 'lucide-react';
+
+export function UserProfile() {
+  const { user, signOut } = useAuth();
+
+  if (!user) return null;
+
+  const getInitials = (email: string) => {
+    return email
+      .split('@')[0]
+      .split('.')
+      .map(part => part.charAt(0).toUpperCase())
+      .join('')
+      .slice(0, 2);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
+            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+              {getInitials(user.email || 'User')}
+            </AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">
+              {user.user_metadata?.full_name || 'User'}
+            </p>
+            <p className="text-xs leading-none text-muted-foreground flex items-center">
+              <Mail className="mr-1 h-3 w-3" />
+              {user.email}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="cursor-pointer">
+          <User className="mr-2 h-4 w-4" />
+          <span>Profile</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer">
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          className="cursor-pointer text-red-600 focus:text-red-600"
+          onClick={handleSignOut}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sign out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

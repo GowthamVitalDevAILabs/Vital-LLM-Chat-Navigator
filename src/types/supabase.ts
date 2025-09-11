@@ -20,6 +20,7 @@ export interface Database {
           category: string[] | null
           isPopular: boolean
           tags: string[] | null
+          user_id: string
         }
         Insert: {
           id?: string
@@ -31,6 +32,7 @@ export interface Database {
           category?: string[] | null
           isPopular?: boolean
           tags?: string[] | null
+          user_id?: string
         }
         Update: {
           id?: string
@@ -42,6 +44,7 @@ export interface Database {
           category?: string[] | null
           isPopular?: boolean
           tags?: string[] | null
+          user_id?: string
         }
       }
     }

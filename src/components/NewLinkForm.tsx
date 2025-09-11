@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateLlmLink } from '@/hooks/useLlmLinks';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import type { LlmLinkInsert } from '@/hooks/useLlmLinks';
 import modelsData from '@/data/models.json';
 
@@ -15,6 +16,7 @@ interface NewLinkFormProps {
 
 export function NewLinkForm({ onClose }: NewLinkFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const createLlmLink = useCreateLlmLink();
   const [formData, setFormData] = useState<LlmLinkInsert>({
     name: '',
@@ -28,8 +30,24 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'You must be logged in to create a link',
+      });
+      return;
+    }
+    
     try {
-      await createLlmLink.mutateAsync(formData);
+      // Include the current user's ID when creating the link
+      const linkData = {
+        ...formData,
+        user_id: user.id
+      };
+      
+      await createLlmLink.mutateAsync(linkData);
       toast({
         title: 'Success',
         description: 'Link created successfully',
