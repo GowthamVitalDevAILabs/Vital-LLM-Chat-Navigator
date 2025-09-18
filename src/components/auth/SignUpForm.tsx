@@ -5,11 +5,12 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, Mail, Lock, Chrome, Loader2, User } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Loader2, User } from 'lucide-react';
+import { SignUpFormData } from '@/config/types';
 
 const signUpSchema = z.object({
+  username: z.string().min(3, 'Username must be at least 3 characters').max(20, 'Username must be less than 20 characters'),
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
@@ -18,14 +19,11 @@ const signUpSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type SignUpFormData = z.infer<typeof signUpSchema>;
-
 export function SignUpForm() {
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const {
     register,
@@ -38,24 +36,33 @@ export function SignUpForm() {
   const onSubmit = async (data: SignUpFormData) => {
     setIsLoading(true);
     try {
-      await signUp(data.email, data.password);
+      await signUp(data.email, data.password, data.username);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    try {
-      await signInWithGoogle();
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-4">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="signup-username" className="text-gray-200">Username</Label>
+          <div className="relative">
+            <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              id="signup-username"
+              type="text"
+              placeholder="Choose a username"
+              className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500"
+              {...register('username')}
+            />
+          </div>
+          {errors.username && (
+            <p className="text-sm text-red-400">{errors.username.message}</p>
+          )}
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="signup-email" className="text-gray-200">Email</Label>
           <div className="relative">
@@ -148,35 +155,6 @@ export function SignUpForm() {
           )}
         </Button>
       </form>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <Separator className="w-full bg-gray-600" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-gray-800 px-2 text-gray-400">Or continue with</span>
-        </div>
-      </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full bg-transparent border-gray-600 text-gray-200 hover:bg-gray-700/50 hover:text-white"
-        onClick={handleGoogleSignIn}
-        disabled={isGoogleLoading}
-      >
-        {isGoogleLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Connecting...
-          </>
-        ) : (
-          <>
-            <Chrome className="mr-2 h-4 w-4" />
-            Sign up with Google
-          </>
-        )}
-      </Button>
     </div>
   );
 }

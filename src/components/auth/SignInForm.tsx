@@ -1,3 +1,26 @@
+/**
+ * Sign In Form Component - Username-Based Authentication
+ * 
+ * Provides a clean, username-only sign-in interface for the authentication system.
+ * Users can sign in using their username and password without needing to remember their email.
+ * 
+ * Features:
+ * - Username + password authentication
+ * - Form validation with Zod schema
+ * - Password visibility toggle
+ * - Loading states and error handling
+ * - Responsive design with Tailwind CSS
+ * - Integrated with useAuth context
+ * 
+ * Security:
+ * - Username is resolved to email server-side via RPC function
+ * - No sensitive data exposed in client-side code
+ * - Proper form validation and sanitization
+ * 
+ * @author VitalDevAILabs
+ * @version 1.1.0
+ */
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,20 +30,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, Mail, Lock, Chrome, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, User, Lock, Loader2 } from 'lucide-react';
+import { SignInFormData } from '@/config/types';
 
+/** Zod validation schema for sign-in form */
 const signInSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  username: z.string().min(1, 'Please enter your username'),
+  password: z.string().min(1, 'Please enter your password'),
 });
 
-type SignInFormData = z.infer<typeof signInSchema>;
-
+/**
+ * SignInForm Component
+ * 
+ * Renders the username-based sign-in form with validation and loading states.
+ * Integrates with the AuthContext for authentication operations.
+ */
 export function SignInForm() {
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const {
     register,
@@ -30,21 +58,13 @@ export function SignInForm() {
     resolver: zodResolver(signInSchema),
   });
 
+  /** Handle form submission and authentication */
   const onSubmit = async (data: SignInFormData) => {
     setIsLoading(true);
     try {
-      await signIn(data.email, data.password);
+      await signIn(data.username, data.password);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    try {
-      await signInWithGoogle();
-    } finally {
-      setIsGoogleLoading(false);
     }
   };
 
@@ -52,19 +72,19 @@ export function SignInForm() {
     <div className="space-y-4">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-gray-200">Email</Label>
+          <Label htmlFor="username" className="text-gray-200">Username</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
+              id="username"
+              type="text"
+              placeholder="Enter your username"
               className="pl-10 bg-gray-700/50 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500"
-              {...register('email')}
+              {...register('username')}
             />
           </div>
-          {errors.email && (
-            <p className="text-sm text-red-400">{errors.email.message}</p>
+          {errors.username && (
+            <p className="text-sm text-red-400">{errors.username.message}</p>
           )}
         </div>
 
@@ -113,35 +133,6 @@ export function SignInForm() {
           )}
         </Button>
       </form>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <Separator className="w-full bg-gray-600" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-gray-800 px-2 text-gray-400">Or continue with</span>
-        </div>
-      </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full bg-transparent border-gray-600 text-gray-200 hover:bg-gray-700/50 hover:text-white"
-        onClick={handleGoogleSignIn}
-        disabled={isGoogleLoading}
-      >
-        {isGoogleLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Connecting...
-          </>
-        ) : (
-          <>
-            <Chrome className="mr-2 h-4 w-4" />
-            Sign in with Google
-          </>
-        )}
-      </Button>
     </div>
   );
 }

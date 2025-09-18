@@ -10,6 +10,34 @@ export interface FormFieldConfig {
   placeholder?: string;
 }
 
+// Profile types for user management
+export interface UserProfile {
+  id: string;
+  username: string;
+  updated_at?: string;
+  avatar_url?: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  username?: string;
+  profile?: UserProfile;
+}
+
+// Form types for authentication
+export interface SignUpFormData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface SignInFormData {
+  username: string;
+  password: string;
+}
+
 // Re-export everything from a single file
 export * from './urls';
 export * from './constants';
