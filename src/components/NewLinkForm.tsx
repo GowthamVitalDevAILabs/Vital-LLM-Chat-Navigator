@@ -29,9 +29,9 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
     tags: [],
     url: ''
   });
-  const [selectedCategories, setSelectedCategories] = useState<Option[]>([]);
   const [selectedModels, setSelectedModels] = useState<Option[]>([]);
   const [selectedAreaTags, setSelectedAreaTags] = useState<TTag[]>([]);
+  const [selectedAreaCategories, setSelectedAreaCategories] = useState<TTag[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,20 +101,13 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
     ['SvelteKit', 'Remix', 'Vue.js', 'React', 'Angular', 'Node.js', 'Python', 'AI', 'ML', 'API', 'Database'].forEach(tag => tagSet.add(tag));
     
     return {
-      categories: Array.from(categorySet).sort().map(cat => ({ label: cat, value: cat })),
       tags: Array.from(tagSet).sort().map(tag => ({ label: tag, value: tag })),
       models: modelsData.map(model => ({ label: model, value: model })),
-      areaTags: Array.from(tagSet).sort().map(tag => ({ key: tag, name: tag }))
+      areaTags: Array.from(tagSet).sort().map(tag => ({ key: tag, name: tag })),
+      areaCategories: Array.from(categorySet).sort().map(cat => ({ key: cat, name: cat }))
     };
   }, [existingLinks]);
   
-  const handleCategoriesChange = (selected: Option[]) => {
-    setSelectedCategories(selected);
-    setFormData(prev => ({
-      ...prev,
-      category: selected.map(option => option.value)
-    }));
-  };
   
   
   const handleModelsChange = (selected: Option[]) => {
@@ -132,6 +125,26 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
       ...prev,
       tags: selected.map(tag => tag.name)
     }));
+  };
+
+  const handleTagCreate = (newTag: TTag) => {
+    // Optionally, you can add the new tag to your database or cache here
+    // For now, it's handled locally within the component
+    console.log('New tag created:', newTag);
+  };
+
+  const handleAreaCategoriesChange = (selected: TTag[]) => {
+    setSelectedAreaCategories(selected);
+    setFormData(prev => ({
+      ...prev,
+      category: selected.map(cat => cat.name)
+    }));
+  };
+
+  const handleCategoryCreate = (newCategory: TTag) => {
+    // Optionally, you can add the new category to your database or cache here
+    // For now, it's handled locally within the component
+    console.log('New category created:', newCategory);
   };
 
   return (
@@ -182,14 +195,16 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Categories (comma-separated) <span className="text-red-500">*</span></label>
-            <MultiSelect
-              options={availableOptions.categories}
-              value={selectedCategories}
-              onChange={handleCategoriesChange}
-              placeholder="Select frameworks"
-              hasSelectAll={true}
-              disableSearch={false}
+            <MultipleSelect
+              tags={availableOptions.areaCategories}
+              onChange={handleAreaCategoriesChange}
+              onTagCreate={handleCategoryCreate}
+              defaultValue={selectedAreaCategories}
+              label="Categories"
+              placeholder="No categories selected - choose from available categories below"
+              className="w-full"
+              allowCreate={true}
+              createLabel="Create new category"
             />
           </div>
 
@@ -197,10 +212,13 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
             <MultipleSelect
               tags={availableOptions.areaTags}
               onChange={handleAreaTagsChange}
+              onTagCreate={handleTagCreate}
               defaultValue={selectedAreaTags}
               label="Tags"
               placeholder="No tags selected - choose from available tags below"
               className="w-full"
+              allowCreate={true}
+              createLabel="Create new tag"
             />
           </div>
 

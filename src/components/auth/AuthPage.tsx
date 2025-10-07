@@ -63,7 +63,7 @@ export function AuthPage() {
 
         {/* Footer */}
         <p className="text-center text-sm text-gray-400">
-          Secure authentication powered by Supabase
+          {/* Secure authentication powered by Supabase */}
         </p>
       </div>
     </div>

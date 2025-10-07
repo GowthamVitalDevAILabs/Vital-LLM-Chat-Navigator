@@ -7,9 +7,10 @@ import {
   useEffect,
   useRef,
   useState,
+  KeyboardEvent,
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Plus, Check } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
@@ -22,23 +23,33 @@ type MultipleSelectProps = {
   tags: TTag[];
   customTag?: (item: TTag) => ReactNode | string;
   onChange?: (value: TTag[]) => void;
+  onTagCreate?: (newTag: TTag) => void;
   defaultValue?: TTag[];
   label?: string;
   placeholder?: string;
   className?: string;
+  allowCreate?: boolean;
+  createLabel?: string;
 };
 
 export const MultipleSelect = ({
   tags,
   customTag,
   onChange,
+  onTagCreate,
   defaultValue,
   label = "Tags",
   placeholder = "Select tags...",
   className,
+  allowCreate = true,
+  createLabel = "Create new tag",
 }: MultipleSelectProps) => {
   const [selected, setSelected] = useState<TTag[]>(defaultValue ?? []);
+  const [availableTags, setAvailableTags] = useState<TTag[]>(tags);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (containerRef?.current) {
@@ -50,6 +61,16 @@ export const MultipleSelect = ({
     onValueChange(selected);
   }, [selected]);
 
+  useEffect(() => {
+    setAvailableTags(tags);
+  }, [tags]);
+
+  useEffect(() => {
+    if (isCreating && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isCreating]);
+
   const onValueChange = (value: TTag[]) => {
     onChange?.(value);
   };
@@ -60,6 +81,63 @@ export const MultipleSelect = ({
 
   const onDeselect = (item: TTag) => {
     setSelected((prev) => prev.filter((i) => i !== item));
+  };
+
+  const startCreating = () => {
+    setIsCreating(true);
+    setNewTagName('');
+  };
+
+  const cancelCreating = () => {
+    setIsCreating(false);
+    setNewTagName('');
+  };
+
+  const createTag = () => {
+    const trimmedName = newTagName.trim();
+    if (!trimmedName) return;
+
+    // Check if tag already exists
+    const tagExists = availableTags.some(
+      tag => tag.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+    
+    if (tagExists) {
+      // If tag exists, just select it
+      const existingTag = availableTags.find(
+        tag => tag.name.toLowerCase() === trimmedName.toLowerCase()
+      );
+      if (existingTag) {
+        onSelect(existingTag);
+      }
+    } else {
+      // Create new tag
+      const newTag: TTag = {
+        key: trimmedName.toLowerCase().replace(/\s+/g, '-'),
+        name: trimmedName
+      };
+      
+      // Add to available tags
+      setAvailableTags(prev => [...prev, newTag]);
+      
+      // Select the new tag
+      onSelect(newTag);
+      
+      // Notify parent component
+      onTagCreate?.(newTag);
+    }
+    
+    cancelCreating();
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      createTag();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelCreating();
+    }
   };
 
   return (
@@ -105,17 +183,66 @@ export const MultipleSelect = ({
         </motion.div>
         
         {/* Available Tags Selection Area */}
-        {tags?.length > selected?.length && (
+        {(availableTags?.length > selected?.length || allowCreate) && (
           <motion.div 
             layout
-            className='flex w-full flex-wrap gap-2 rounded-md border border-border bg-muted/30 p-3 max-h-32 overflow-y-auto'
+            className='flex w-full flex-wrap gap-2 rounded-md border border-border bg-muted/30 p-3 max-h-40 overflow-y-auto'
           >
             <div className="w-full">
-              <span className="text-xs text-muted-foreground mb-2 block">
-                Available tags (click to add):
-              </span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground">
+                  Available tags (click to add):
+                </span>
+                {allowCreate && !isCreating && (
+                  <button
+                    type="button"
+                    onClick={startCreating}
+                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <Plus size={12} />
+                    {createLabel}
+                  </button>
+                )}
+              </div>
+              
               <div className="flex flex-wrap gap-2">
-                {tags
+                {/* Create New Tag Input */}
+                {isCreating && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex items-center gap-1 bg-primary/10 border border-primary rounded-md px-2 py-1"
+                  >
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Enter tag name..."
+                      className="bg-transparent text-sm outline-none placeholder:text-muted-foreground min-w-0 w-24"
+                    />
+                    <button
+                      type="button"
+                      onClick={createTag}
+                      disabled={!newTagName.trim()}
+                      className="p-0.5 hover:bg-primary/20 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Check size={12} className="text-primary" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelCreating}
+                      className="p-0.5 hover:bg-destructive/20 rounded-sm transition-colors"
+                    >
+                      <X size={12} className="text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </motion.div>
+                )}
+                
+                {/* Existing Available Tags */}
+                {availableTags
                   ?.filter((item) => !selected?.some((i) => i.key === item.key))
                   .map((item) => (
                     <Tag
