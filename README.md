@@ -5,6 +5,8 @@ A modern, full-featured web application for managing and discovering AI model li
 ## ✨ Features
 
 ### 🎯 Core Functionality
+- 🔐 **Username-Based Authentication** - Secure sign-up/sign-in with username and password
+- 👤 **Personal Data Management** - Each user has their own private collection of links
 - 🔍 **Advanced Search & Filtering** - Search across name, model, description, and tags with real-time results
 - 🏷️ **Category-based Organization** - Dynamic category filtering and organization
 - ⭐ **Popular Links Highlighting** - Mark and filter popular AI resources
@@ -12,6 +14,8 @@ A modern, full-featured web application for managing and discovering AI model li
 - ➕ **CRUD Operations** - Create, read, update, and delete links with full data management
 
 ### 🎨 User Experience
+- 🔐 **Secure Authentication Flow** - Beautiful username-based login/signup forms with modern design
+- 👤 **User Profile Management** - Customizable usernames, avatar display, and account management
 - 🌓 **Dark/Light Theme Support** - System-aware theme switching with manual toggle
 - ✨ **Modern, Responsive UI** - Built with shadcn/ui and Tailwind CSS
 - 📱 **Mobile-First Design** - Fully responsive across all device sizes
@@ -73,9 +77,15 @@ A modern, full-featured web application for managing and discovering AI model li
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
-4. **Database Setup:**
-   Run this SQL in your Supabase SQL Editor:
+4. **Authentication Setup:**
+   - In your Supabase dashboard, go to Authentication > Providers
+   - Enable Email authentication (should be enabled by default)
+   - The system uses username-based authentication with email as backend identifier
+
+5. **Database Setup:**
+   For new installations, run the complete setup SQL in your Supabase SQL Editor:
    ```sql
+   -- Create the main table with user authentication support
    CREATE TABLE llm_links (
      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -85,11 +95,112 @@ A modern, full-featured web application for managing and discovering AI model li
      model TEXT,
      category TEXT[],
      "isPopular" BOOLEAN NOT NULL DEFAULT false,
-     tags TEXT[]
+     tags TEXT[],
+     user_id UUID REFERENCES auth.users(id) DEFAULT auth.uid()
    );
+
+   -- Create profiles table for username-based authentication
+   CREATE TABLE public.profiles (
+     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+     username TEXT UNIQUE NOT NULL,
+     updated_at TIMESTAMPTZ DEFAULT NOW(),
+     avatar_url TEXT,
+     CONSTRAINT username_length CHECK (char_length(username) >= 3 AND char_length(username) <= 20)
+   );
+
+   -- Enable Row Level Security
+   ALTER TABLE llm_links ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+   -- Create security policies for llm_links
+   CREATE POLICY "Users can view own llm_links" ON llm_links
+       FOR SELECT USING (auth.uid() = user_id);
+
+   CREATE POLICY "Users can insert own llm_links" ON llm_links
+       FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+   CREATE POLICY "Users can update own llm_links" ON llm_links
+       FOR UPDATE USING (auth.uid() = user_id);
+
+   CREATE POLICY "Users can delete own llm_links" ON llm_links
+       FOR DELETE USING (auth.uid() = user_id);
+
+   -- Create security policies for profiles
+   CREATE POLICY "Anyone can view profiles" ON public.profiles
+     FOR SELECT USING (true);
+
+   CREATE POLICY "Users can insert their own profile" ON public.profiles
+     FOR INSERT WITH CHECK (auth.uid() = id);
+
+   CREATE POLICY "Users can update their own profile" ON public.profiles
+     FOR UPDATE USING (auth.uid() = id);
+
+   -- Create RPC function for username-based authentication
+   CREATE OR REPLACE FUNCTION public.get_email_by_username(p_username TEXT)
+   RETURNS TEXT
+   LANGUAGE plpgsql
+   SECURITY DEFINER
+   SET search_path = public
+   AS $$
+   DECLARE
+     v_email TEXT;
+   BEGIN
+     SELECT u.email INTO v_email
+     FROM auth.users u
+     JOIN public.profiles p ON p.id = u.id
+     WHERE p.username = p_username;
+     RETURN v_email;
+   END;
+   $$;
+
+   -- Create trigger for automatic profile creation
+   CREATE OR REPLACE FUNCTION public.handle_new_user()
+   RETURNS TRIGGER AS $$
+   DECLARE
+     username_value TEXT;
+     counter INTEGER := 0;
+   BEGIN
+     username_value := COALESCE(
+       new.raw_user_meta_data->>'username',
+       split_part(new.email, '@', 1)
+     );
+     
+     WHILE EXISTS(SELECT 1 FROM public.profiles WHERE username = username_value) LOOP
+       counter := counter + 1;
+       username_value := COALESCE(
+         new.raw_user_meta_data->>'username',
+         split_part(new.email, '@', 1)
+       ) || counter::text;
+     END LOOP;
+     
+     INSERT INTO public.profiles (id, username, updated_at)
+     VALUES (new.id, username_value, NOW());
+     
+     RETURN new;
+   END;
+   $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+   CREATE TRIGGER on_auth_user_created
+     AFTER INSERT ON auth.users
+     FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+   -- Create indexes for better performance
+   CREATE INDEX idx_llm_links_user_id ON llm_links(user_id);
+   CREATE INDEX idx_profiles_username ON public.profiles(username);
+
+   -- Grant permissions
+   GRANT ALL ON public.profiles TO authenticated;
+   GRANT SELECT ON public.profiles TO anon;
+   GRANT EXECUTE ON FUNCTION public.get_email_by_username(TEXT) TO authenticated;
    ```
 
-5. **Start Development Server:**
+   **For existing installations:** If you already have data, use the migration file:
+   ```bash
+   # Run the SQL commands in database-migration.sql
+   # This will safely add authentication without losing existing data
+   ```
+
+6. **Start Development Server:**
    ```bash
    npm run dev
    ```
@@ -100,6 +211,10 @@ A modern, full-featured web application for managing and discovering AI model li
 llm-chat-links/
 ├── src/
 │   ├── components/          # React components
+│   │   ├── auth/           # Username-based authentication components
+│   │   │   ├── AuthPage.tsx    # Main authentication page with tabs
+│   │   │   ├── SignInForm.tsx  # Username + password sign-in form
+│   │   │   └── SignUpForm.tsx  # Email + username + password sign-up form
 │   │   ├── ui/             # shadcn/ui component library
 │   │   │   ├── button.tsx  # Button variants (default, hero, premium)
 │   │   │   ├── card.tsx    # Card variants (default, glass, premium)
@@ -109,13 +224,17 @@ llm-chat-links/
 │   │   │   └── ...         # Other UI primitives
 │   │   ├── LlmLinkCard.tsx # Link display card component
 │   │   ├── NewLinkForm.tsx # Form for adding new links
-│   │   └── ThemeToggle.tsx # Dark/light theme switcher
+│   │   ├── ThemeToggle.tsx # Dark/light theme switcher
+│   │   └── UserProfile.tsx # User profile dropdown with username editing
 │   ├── config/             # Configuration and constants
 │   │   ├── constants.ts    # App-wide constants
 │   │   ├── types.ts        # Type definitions and configs
 │   │   └── urls.ts         # URL configurations
+│   ├── contexts/           # React contexts
+│   │   └── AuthContext.tsx # Username-based authentication context and provider
 │   ├── hooks/              # Custom React hooks
 │   │   ├── useLlmLinks.ts  # Main data fetching and CRUD hooks
+│   │   ├── useProfile.ts   # User profile management hook
 │   │   ├── use-toast.ts    # Toast notification hook
 │   │   └── use-mobile.tsx  # Mobile detection hook
 │   ├── lib/                # Utilities and configurations
@@ -156,8 +275,9 @@ llm-chat-links/
 
 ## 🔧 Database Schema
 
-The application uses a single `llm_links` table with the following structure:
+The application uses two main tables with user-based data segregation:
 
+### Main Data Table (`llm_links`)
 | Column      | Type          | Description                    |
 |-------------|---------------|--------------------------------|
 | id          | UUID          | Primary key (auto-generated)  |
@@ -169,6 +289,22 @@ The application uses a single `llm_links` table with the following structure:
 | category    | TEXT[]        | Array of category tags         |
 | isPopular   | BOOLEAN       | Popular resource flag          |
 | tags        | TEXT[]        | Array of searchable tags       |
+| user_id     | UUID          | Foreign key to auth.users      |
+
+### User Profiles Table (`profiles`)
+| Column      | Type          | Description                    |
+|-------------|---------------|--------------------------------|
+| id          | UUID          | Primary key, references auth.users(id) |
+| username    | TEXT          | Unique username (3-20 chars)  |
+| updated_at  | TIMESTAMPTZ   | Profile last updated timestamp |
+| avatar_url  | TEXT          | Optional avatar image URL      |
+
+### Security Features
+- **Row Level Security (RLS)**: Automatically filters data by authenticated user
+- **Username-Based Authentication**: Users sign in with username, email resolved server-side
+- **Profile Integration**: Automatic profile creation via database triggers
+- **Data Isolation**: Each user can only access their own links and profile
+- **Secure RPC Functions**: Server-side username-to-email resolution
 
 ## 🎨 UI Components & Design System
 
@@ -219,10 +355,14 @@ Built on **shadcn/ui** with custom extensions:
 - ✅ Responsive design and theme support
 - ✅ Inline table editing
 - ✅ Toast notification system
+- ✅ Username-based authentication system
+- ✅ User profiles with customizable usernames and avatars
+- ✅ Row Level Security (RLS) for complete data isolation
+- ✅ Modern authentication UI with clean, minimal design
+- ✅ Automatic profile creation and management
+- ✅ Secure server-side username resolution
 
 ### Upcoming Features 🚧
-- 🔐 User authentication and authorization
-- 👤 User profiles and personal collections
 - ⭐ Favorite links and bookmarking
 - 🔗 Link sharing and collaboration
 - 📊 Usage analytics and insights
@@ -231,6 +371,8 @@ Built on **shadcn/ui** with custom extensions:
 - 🔍 Full-text search with Supabase
 - 📈 Link popularity tracking
 - 🎯 Personalized recommendations
+- 🔄 Real-time collaboration features
+- 📧 Email notifications and reminders
 
 ## 🤝 Contributing
 

@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/types/supabase';
 
 export type LlmLink = Database['public']['Tables']['llm_links']['Row'];
@@ -66,41 +67,47 @@ const deleteLlmLink = async (id: string): Promise<void> => {
 };
 
 export const useLlmLinks = () => {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['llmLinks'],
+    queryKey: ['llmLinks', user?.id],
     queryFn: fetchLlmLinks,
+    enabled: !!user, // Only run query when user is authenticated
   });
 };
 
 export const useCreateLlmLink = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   return useMutation({
     mutationFn: createLlmLink,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['llmLinks'] });
+      queryClient.invalidateQueries({ queryKey: ['llmLinks', user?.id] });
     },
   });
 };
 
 export const useUpdateLlmLink = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   return useMutation({
     mutationFn: updateLlmLink,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['llmLinks'] });
+      queryClient.invalidateQueries({ queryKey: ['llmLinks', user?.id] });
     },
   });
 };
 
 export const useDeleteLlmLink = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   return useMutation({
     mutationFn: deleteLlmLink,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['llmLinks'] });
+      queryClient.invalidateQueries({ queryKey: ['llmLinks', user?.id] });
     },
   });
 };

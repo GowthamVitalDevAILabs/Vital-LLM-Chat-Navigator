@@ -27,6 +27,8 @@ import {
 import { useLlmLinks, useUpdateLlmLink, useDeleteLlmLink, LlmLink } from '@/hooks/useLlmLinks'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
+import { UserProfile } from '@/components/UserProfile'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { MoreHorizontal, ChevronDown, ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Home } from "lucide-react"
 
 export default function LlmLinksTablePage() {
@@ -253,8 +255,10 @@ export default function LlmLinksTablePage() {
             </Button>
             <h1 className="text-2xl font-bold">LLM Links Table</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => refetch()}>Refresh</Button>
+            <ThemeToggle />
+            <UserProfile />
           </div>
         </div>
 

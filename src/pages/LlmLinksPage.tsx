@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Search, Plus, Link, RefreshCw, Table } from 'lucide-react';
 import { LlmLinkCard } from '@/components/LlmLinkCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { UserProfile } from '@/components/UserProfile';
 import { NewLinkForm } from '@/components/NewLinkForm';
 import { useLlmLinks } from '@/hooks/useLlmLinks';
 import { useToast } from '@/hooks/use-toast';
@@ -146,6 +147,7 @@ export default function LlmLinksPage() {
               <RefreshCw className="h-4 w-4" />
             </Button>
             <ThemeToggle />
+            <UserProfile />
           </div>
         </div>
 

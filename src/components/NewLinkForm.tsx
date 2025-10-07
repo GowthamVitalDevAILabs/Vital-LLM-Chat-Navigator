@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCreateLlmLink } from '@/hooks/useLlmLinks';
+import { MultiSelect, type Option } from '@/components/ui/multiselect';
+import { MultipleSelect, type TTag } from '@/components/ui/multiple-select';
+import { useCreateLlmLink, useLlmLinks } from '@/hooks/useLlmLinks';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import type { LlmLinkInsert } from '@/hooks/useLlmLinks';
 import modelsData from '@/data/models.json';
 
@@ -15,6 +17,8 @@ interface NewLinkFormProps {
 
 export function NewLinkForm({ onClose }: NewLinkFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { data: existingLinks } = useLlmLinks();
   const createLlmLink = useCreateLlmLink();
   const [formData, setFormData] = useState<LlmLinkInsert>({
     name: '',
@@ -25,11 +29,30 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
     tags: [],
     url: ''
   });
+  const [selectedModels, setSelectedModels] = useState<Option[]>([]);
+  const [selectedAreaTags, setSelectedAreaTags] = useState<TTag[]>([]);
+  const [selectedAreaCategories, setSelectedAreaCategories] = useState<TTag[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'You must be logged in to create a link',
+      });
+      return;
+    }
+    
     try {
-      await createLlmLink.mutateAsync(formData);
+      // Include the current user's ID when creating the link
+      const linkData = {
+        ...formData,
+        user_id: user.id
+      };
+      
+      await createLlmLink.mutateAsync(linkData);
       toast({
         title: 'Success',
         description: 'Link created successfully',
@@ -44,20 +67,84 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
     }
   };
 
-  const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  // Extract unique categories and tags from existing data
+  const availableOptions = useMemo(() => {
+    if (!existingLinks) return { categories: [], tags: [] };
+    
+    const categorySet = new Set<string>();
+    const tagSet = new Set<string>();
+    
+    existingLinks.forEach(link => {
+      // Handle categories
+      if (Array.isArray(link.category)) {
+        link.category.forEach(cat => {
+          if (cat && typeof cat === 'string') {
+            categorySet.add(cat);
+          }
+        });
+      }
+      
+      // Handle tags
+      if (Array.isArray(link.tags)) {
+        link.tags.forEach(tag => {
+          if (tag && typeof tag === 'string') {
+            tagSet.add(tag);
+          }
+        });
+      }
+    });
+    
+    // Add some default categories
+    ['General Experts', 'English Expert', 'Formatters', 'Code Assistant', 'Creative Writing', 'Data Analysis'].forEach(cat => categorySet.add(cat));
+    
+    // Add some default tags
+    ['SvelteKit', 'Remix', 'Vue.js', 'React', 'Angular', 'Node.js', 'Python', 'AI', 'ML', 'API', 'Database'].forEach(tag => tagSet.add(tag));
+    
+    return {
+      tags: Array.from(tagSet).sort().map(tag => ({ label: tag, value: tag })),
+      models: modelsData.map(model => ({ label: model, value: model })),
+      areaTags: Array.from(tagSet).sort().map(tag => ({ key: tag, name: tag })),
+      areaCategories: Array.from(categorySet).sort().map(cat => ({ key: cat, name: cat }))
+    };
+  }, [existingLinks]);
+  
+  
+  
+  const handleModelsChange = (selected: Option[]) => {
+    setSelectedModels(selected);
+    // For models, we'll take the first selected model since it's typically single-select
     setFormData(prev => ({
       ...prev,
-      tags: value.split(',').map(tag => tag.trim()).filter(Boolean)
+      model: selected.length > 0 ? selected[0].value : ''
+    }));
+  };
+  
+  const handleAreaTagsChange = (selected: TTag[]) => {
+    setSelectedAreaTags(selected);
+    setFormData(prev => ({
+      ...prev,
+      tags: selected.map(tag => tag.name)
     }));
   };
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleTagCreate = (newTag: TTag) => {
+    // Optionally, you can add the new tag to your database or cache here
+    // For now, it's handled locally within the component
+    console.log('New tag created:', newTag);
+  };
+
+  const handleAreaCategoriesChange = (selected: TTag[]) => {
+    setSelectedAreaCategories(selected);
     setFormData(prev => ({
       ...prev,
-      category: value.split(',').map(cat => cat.trim()).filter(Boolean)
+      category: selected.map(cat => cat.name)
     }));
+  };
+
+  const handleCategoryCreate = (newCategory: TTag) => {
+    // Optionally, you can add the new category to your database or cache here
+    // For now, it's handled locally within the component
+    console.log('New category created:', newCategory);
   };
 
   return (
@@ -88,21 +175,14 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Model <span className="text-red-500">*</span></label>
-            <Select 
-              value={formData.model} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, model: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                {modelsData.map((model) => (
-                  <SelectItem key={model} value={model}>
-                    {model}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={availableOptions.models}
+              value={selectedModels}
+              onChange={handleModelsChange}
+              placeholder="Select a model"
+              hasSelectAll={false}
+              disableSearch={false}
+            />
           </div>
 
           <div className="space-y-2">
@@ -115,22 +195,30 @@ export function NewLinkForm({ onClose }: NewLinkFormProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Categories (comma-separated) <span className="text-red-500">*</span></label>
-            <Input
-              required
-              value={formData.category.join(', ')}
-              onChange={handleCategoryChange}
-              placeholder="category1, category2, category3"
+            <MultipleSelect
+              tags={availableOptions.areaCategories}
+              onChange={handleAreaCategoriesChange}
+              onTagCreate={handleCategoryCreate}
+              defaultValue={selectedAreaCategories}
+              label="Categories"
+              placeholder="No categories selected - choose from available categories below"
+              className="w-full"
+              allowCreate={true}
+              createLabel="Create new category"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Tags (comma-separated) <span className="text-red-500">*</span></label>
-            <Input
-              required
-              value={formData.tags.join(', ')}
-              onChange={handleTagsChange}
-              placeholder="tag1, tag2, tag3"
+            <MultipleSelect
+              tags={availableOptions.areaTags}
+              onChange={handleAreaTagsChange}
+              onTagCreate={handleTagCreate}
+              defaultValue={selectedAreaTags}
+              label="Tags"
+              placeholder="No tags selected - choose from available tags below"
+              className="w-full"
+              allowCreate={true}
+              createLabel="Create new tag"
             />
           </div>
 
