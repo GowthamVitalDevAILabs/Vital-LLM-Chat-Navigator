@@ -38,6 +38,22 @@ export interface SignInFormData {
   password: string;
 }
 
+// Prompt Bank Types
+export interface Prompt {
+  id: string;
+  user_id?: string;
+  title: string;
+  category: string[];  // Array to match llm_links pattern
+  description?: string;
+  prompt_text: string;
+  tags: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type PromptInsert = Omit<Prompt, 'id' | 'created_at' | 'updated_at'>;
+export type PromptUpdate = Partial<PromptInsert> & { id: string };
+
 // Re-export everything from a single file
 export * from './urls';
 export * from './constants';

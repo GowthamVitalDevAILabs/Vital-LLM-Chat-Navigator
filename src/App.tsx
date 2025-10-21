@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AuthPage } from "@/components/auth/AuthPage";
 import LlmLinksPage from "./pages/LlmLinksPage";
 import LlmLinksTablePage from "./pages/LlmLinksTablePage";
+import PromptBankPage from "./pages/PromptBankPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<LlmLinksPage />} />
         <Route path="/table" element={<LlmLinksTablePage />} />
+        <Route path="/prompts" element={<PromptBankPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

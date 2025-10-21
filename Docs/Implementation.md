@@ -51,6 +51,7 @@ Must-have (implemented)
 - [x] Dual views: card and table with search/filter/sort
 - [x] CRUD operations for links
 - [x] Responsive UI, dark/light theme, toasts
+- [x] Prompt Bank: Per-user prompt storage with search/filter/copy
 
 Should-have (near-term)
 - [ ] Favorite/bookmark links
@@ -86,11 +87,32 @@ Stage 2 — Core Features
 - [x] Table view with inline edit, sort, multi-filter
 - [x] CRUD with validation and toasts
 - [x] Profile dropdown with username edit
+- [x] Prompt Bank with search, categories, tags, and copy
 - [ ] Favorites/bookmarks with quick filter
 
 Acceptance criteria
 - Card/table parity for basic management
 - Inline validation and optimistic UX where appropriate
+- Prompt Bank: Users can create/search/filter/copy their own prompts
+
+### Prompt Bank Feature (Stage 2.5)
+Must-have (implemented)
+- [x] Per-user prompt storage with RLS enforcement
+- [x] Search/filter by text, category, and tags
+- [x] One-click copy prompt to clipboard with toast feedback
+- [x] CRUD operations with form validation
+- [x] Responsive card grid layout matching Vital Theme
+- [x] Full-text search via tsvector indexes (database ready)
+- [x] Category and tag management with MultipleSelect
+- [x] Mock data implementation for Phase 1 UI development
+
+Acceptance criteria
+- ✅ User can create/edit/delete their own prompts
+- ✅ Search is debounced (300ms) and responsive
+- ✅ Copy action shows success toast
+- ✅ Design matches existing UI component patterns
+- ✅ Categories and tags are dynamically populated from data
+- ⏳ Database schema ready for Supabase integration (Phase 2)
 
 
 Stage 3 — Advanced Features
