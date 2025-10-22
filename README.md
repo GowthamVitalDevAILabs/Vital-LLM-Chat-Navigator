@@ -36,6 +36,16 @@ A modern, full-featured web application for managing and discovering AI model li
 - 🔗 **Quick Actions** - One-click access to external links
 - 📱 **Grid Layout** - Responsive grid that adapts to screen size
 
+### 🎯 My Prompts Features
+- 📝 **Personal Prompt Library** - Store and organize your AI prompts
+- 🔍 **Smart Search** - Find prompts by title, description, or tags with debounced search
+- 🏷️ **Category Organization** - Filter prompts by category (Enhancer, Formatter, Study Expert, etc.)
+- 📋 **One-Click Copy** - Copy prompt text to clipboard instantly with toast feedback
+- ✏️ **Full CRUD** - Create, read, update, and delete prompts with validation
+- 🔒 **Private & Secure** - Your prompts are private and isolated via RLS
+- 🏷️ **Flexible Tagging** - Add custom tags for better organization
+- 🎨 **Beautiful UI** - Follows Vital Theme design system with glass morphism cards
+
 ## 🛠 Tech Stack
 
 - **Frontend Framework**: React 18 + TypeScript
@@ -200,6 +210,12 @@ A modern, full-featured web application for managing and discovering AI model li
    # This will safely add authentication without losing existing data
    ```
 
+   **For Prompt Bank Feature:** Run the prompts table setup:
+   ```bash
+   # Run the SQL commands in database-prompts-setup.sql
+   # This will create the prompts table with RLS policies
+   ```
+
 6. **Start Development Server:**
    ```bash
    npm run dev
@@ -257,8 +273,9 @@ llm-chat-links/
 ## 🎯 Usage
 
 ### Navigation
-- **Card View**: `/` - Visual card-based interface for browsing
+- **Card View**: `/` - Visual card-based interface for browsing LLM links
 - **Table View**: `/table` - Spreadsheet-like interface for data management
+- **My Prompts**: `/prompts` - Personal prompt library with search and copy
 
 ### Card View Operations
 - **Search**: Use the search bar to find links by name, model, description, or tags
@@ -272,6 +289,15 @@ llm-chat-links/
 - **Filter**: Use the filter inputs above the table
 - **Delete**: Use the delete button in the actions column
 - **Copy URL**: Quick copy button for sharing links
+
+### My Prompts Operations
+- **Create**: Click "New Prompt" or the floating action button
+- **Search**: Use the search bar to find prompts (debounced 300ms)
+- **Filter**: Click category pills to filter by category
+- **Copy**: Click the copy icon on any card to copy prompt text
+- **View Details**: Click any card to see full prompt with actions
+- **Edit**: Open details and click Edit button
+- **Delete**: Open details and click Delete button (with confirmation)
 
 ## 🔧 Database Schema
 
@@ -298,6 +324,20 @@ The application uses two main tables with user-based data segregation:
 | username    | TEXT          | Unique username (3-20 chars)  |
 | updated_at  | TIMESTAMPTZ   | Profile last updated timestamp |
 | avatar_url  | TEXT          | Optional avatar image URL      |
+
+### Prompt Library Table (`prompts`)
+| Column        | Type          | Description                     |
+|---------------|---------------|---------------------------------|
+| id            | UUID          | Primary key (auto-generated)   |
+| user_id       | UUID          | Foreign key to auth.users      |
+| title         | TEXT          | Prompt title (1-100 chars)     |
+| category      | TEXT          | Category name                   |
+| description   | TEXT          | Optional description (≤500)     |
+| prompt_text   | TEXT          | Actual prompt content (≥10)     |
+| tags          | TEXT[]        | Array of tags                   |
+| created_at    | TIMESTAMPTZ   | Creation timestamp              |
+| updated_at    | TIMESTAMPTZ   | Last update timestamp           |
+| search_fts    | TSVECTOR      | Full-text search index          |
 
 ### Security Features
 - **Row Level Security (RLS)**: Automatically filters data by authenticated user
@@ -363,16 +403,18 @@ Built on **shadcn/ui** with custom extensions:
 - ✅ Secure server-side username resolution
 
 ### Upcoming Features 🚧
+- 🔌 Supabase integration for Prompt Bank (Phase 2 - database ready)
 - ⭐ Favorite links and bookmarking
 - 🔗 Link sharing and collaboration
 - 📊 Usage analytics and insights
 - 🏷️ Advanced tagging system
 - 📱 Progressive Web App (PWA) support
-- 🔍 Full-text search with Supabase
+- 🔍 Full-text search with Supabase (prompts FTS ready)
 - 📈 Link popularity tracking
 - 🎯 Personalized recommendations
 - 🔄 Real-time collaboration features
 - 📧 Email notifications and reminders
+- 🤝 Prompt sharing and templates library
 
 ## 🤝 Contributing
 

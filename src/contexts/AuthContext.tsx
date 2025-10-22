@@ -81,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasShownWelcomeToast, setHasShownWelcomeToast] = useState(false);
   const { toast } = useToast();
 
   /**
@@ -163,16 +164,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Show toast notifications for auth events
-        if (event === 'SIGNED_IN') {
+        if (event === 'SIGNED_IN' && !hasShownWelcomeToast) {
           toast({
             title: "Welcome back!",
             description: "You have successfully signed in.",
           });
+          setHasShownWelcomeToast(true);
         } else if (event === 'SIGNED_OUT') {
           toast({
             title: "Signed out",
             description: "You have been signed out successfully.",
           });
+          setHasShownWelcomeToast(false); // Reset for next login
         }
       }
     );

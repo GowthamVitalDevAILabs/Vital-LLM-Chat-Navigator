@@ -140,6 +140,12 @@ export default function LlmLinksPage() {
                 <Table className="mr-2 h-4 w-4" />
                 View / Edit
               </Button>
+              <Button size="sm" variant="outline" onClick={() => window.location.href = '/prompts'}>
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                My Prompts
+              </Button>
             </div>
           </div>
           <div className="flex items-center gap-2">
